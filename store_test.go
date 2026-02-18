@@ -23,7 +23,7 @@ func TestStore(t *testing.T) {
 	defer teardown(t, s)
 	key := "fooandbar"
 	data := []byte("some jpg bytes")
-	assert.Nil(t, s.writeStream(key, bytes.NewReader(data)))
+	assert.Nil(t, s.Write(key, bytes.NewReader(data)))
 
 	r, err := s.Read(key)
 	assert.Nil(t, err)
@@ -38,7 +38,7 @@ func TestStoreDelete(t *testing.T) {
 	defer teardown(t, s)
 	key := "momspecials"
 	data := []byte("some jpg bytes")
-	err := s.writeStream(key, bytes.NewReader(data))
+	err := s.Write(key, bytes.NewReader(data))
 	assert.Nil(t, err)
 	assert.Nil(t, s.Delete(key))
 }
@@ -48,7 +48,7 @@ func TestHasKey(t *testing.T) {
 	defer teardown(t, s)
 	key := "momspecials"
 	data := []byte("some jpg bytes")
-	err := s.writeStream(key, bytes.NewReader(data))
+	err := s.Write(key, bytes.NewReader(data))
 	assert.Nil(t, err)
 	assert.True(t, s.Has(key))
 }
