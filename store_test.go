@@ -19,11 +19,9 @@ func TestPathTransformFunc(t *testing.T) {
 }
 
 func TestStore(t *testing.T) {
-	opts := StoreOpts{
-		PathTransformFunc: CASPathTransformFunc,
-	}
-	s := NewStore(opts)
-	key := "momspecials"
+	s := newStore()
+	defer teardown(t, s)
+	key := "fooandbar"
 	data := []byte("some jpg bytes")
 	assert.Nil(t, s.writeStream(key, bytes.NewReader(data)))
 
@@ -33,14 +31,11 @@ func TestStore(t *testing.T) {
 	b, err := io.ReadAll(r)
 	assert.Equal(t, string(data), string(b))
 	fmt.Printf("File content: %s", string(b))
-	s.Delete(key)
 }
 
 func TestStoreDelete(t *testing.T) {
-	opts := StoreOpts{
-		PathTransformFunc: CASPathTransformFunc,
-	}
-	s := NewStore(opts)
+	s := newStore()
+	defer teardown(t, s)
 	key := "momspecials"
 	data := []byte("some jpg bytes")
 	err := s.writeStream(key, bytes.NewReader(data))
@@ -49,14 +44,22 @@ func TestStoreDelete(t *testing.T) {
 }
 
 func TestHasKey(t *testing.T) {
-	opts := StoreOpts{
-		PathTransformFunc: CASPathTransformFunc,
-	}
-	s := NewStore(opts)
+	s := newStore()
+	defer teardown(t, s)
 	key := "momspecials"
 	data := []byte("some jpg bytes")
 	err := s.writeStream(key, bytes.NewReader(data))
 	assert.Nil(t, err)
 	assert.True(t, s.Has(key))
-	assert.Nil(t, s.Delete(key))
+}
+
+func newStore() *Store {
+	opts := StoreOpts{
+		PathTransformFunc: CASPathTransformFunc,
+	}
+	return NewStore(opts)
+}
+
+func teardown(t *testing.T, s *Store) {
+	assert.Nil(t, s.Clear())
 }

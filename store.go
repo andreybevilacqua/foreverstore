@@ -89,6 +89,10 @@ func (s *Store) Has(key string) bool {
 	return true
 }
 
+func (s *Store) Clear() error {
+	return os.RemoveAll(s.FolderRoot)
+}
+
 func (s *Store) Delete(key string) error {
 	pathKey := s.PathTransformFunc(key)
 	defer func() {
