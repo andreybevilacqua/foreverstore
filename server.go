@@ -52,26 +52,31 @@ type MessageStoreFile struct {
 }
 
 func (s *FileServer) StoreData(key string, r io.Reader) error {
-	// 1. store the file in the disk
-	// 2. broadcast the file to all known peers in the network
 	buf := new(bytes.Buffer)
+	tee := io.TeeReader(r, buf)
+	size, err := s.store.Write(key, tee)
+	if err != nil {
+		return err
+	}
+
 	msg := Message{
 		Payload: MessageStoreFile{
 			Key:  key,
-			Size: 22,
+			Size: size,
 		},
 	}
-	if err := gob.NewEncoder(buf).Encode(msg); err != nil {
+	msgBuf := new(bytes.Buffer)
+	if err := gob.NewEncoder(msgBuf).Encode(msg); err != nil {
 		return err
 	}
 	for _, peer := range s.peers {
-		if err := peer.Send(buf.Bytes()); err != nil {
+		if err := peer.Send(msgBuf.Bytes()); err != nil {
 			return err
 		}
 	}
 	time.Sleep(time.Second * 3)
 	for _, peer := range s.peers {
-		n, err := io.Copy(peer, r)
+		n, err := io.Copy(peer, buf)
 		if err != nil {
 			return err
 		}
@@ -79,21 +84,6 @@ func (s *FileServer) StoreData(key string, r io.Reader) error {
 	}
 
 	return nil
-
-	// buf := new(bytes.Buffer)
-	// tee := io.TeeReader(r, buf)
-	// if err := s.store.Write(key, tee); err != nil {
-	// 	return err
-	// }
-	// p := &DataMessage{
-	// 	Key:  key,
-	// 	Data: buf.Bytes(),
-	// }
-	// return s.broadcastPayload(&Message{
-	// 	From:    "todo",
-	// 	Payload: p,
-	// })
-
 }
 
 func (s *FileServer) broadcastPayload(msg *Message) error {
@@ -141,7 +131,7 @@ func (s *FileServer) handleMessageStoreFile(from string, msg MessageStoreFile) e
 	if !ok {
 		return fmt.Errorf("peer (%s) could not be found in the peer list", from)
 	}
-	if err := s.store.Write(msg.Key, io.LimitReader(peer, msg.Size)); err != nil {
+	if _, err := s.store.Write(msg.Key, io.LimitReader(peer, msg.Size)); err != nil {
 		return err
 	}
 	peer.(*p2p.TCPPeer).Wg.Done()

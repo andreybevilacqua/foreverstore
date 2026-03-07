@@ -110,7 +110,7 @@ func (s *Store) Read(key string) (io.Reader, error) {
 	return buf, err
 }
 
-func (s *Store) Write(key string, content io.Reader) error {
+func (s *Store) Write(key string, content io.Reader) (int64, error) {
 	return s.writeStream(key, content)
 }
 
@@ -120,24 +120,24 @@ func (s *Store) readStream(key string) (io.ReadCloser, error) {
 	return os.Open(fullPathWithRoot)
 }
 
-func (s *Store) writeStream(key string, content io.Reader) error {
+func (s *Store) writeStream(key string, content io.Reader) (int64, error) {
 	pathKey := s.PathTransformFunc(key)
 	directoryTreeWithRoot := concatRootToPath(s.FolderRoot, pathKey.PathName)
 	if err := os.MkdirAll(directoryTreeWithRoot, os.ModePerm); err != nil {
-		return err
+		return 0, err
 	}
 	fullPath := concatRootToPath(s.FolderRoot, pathKey.FullPath())
 	f, err := os.Create(fullPath)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	n, err := io.Copy(f, content)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	log.Printf("written (%d) bytes to disk: %s", n, fullPath)
-	return nil
+	return n, nil
 }
 
 func concatRootToPath(folderRoot string, path string) string {
