@@ -23,10 +23,13 @@ func TestStore(t *testing.T) {
 	defer teardown(t, s)
 	key := "fooandbar"
 	data := []byte("some jpg bytes")
-	assert.Nil(t, s.Write(key, bytes.NewReader(data)))
-
-	r, err := s.Read(key)
+	n, err := s.Write(key, bytes.NewReader(data))
 	assert.Nil(t, err)
+	assert.True(t, n > 0)
+
+	n, r, err := s.Read(key)
+	assert.Nil(t, err)
+	assert.True(t, n > 0)
 
 	b, err := io.ReadAll(r)
 	assert.Equal(t, string(data), string(b))
@@ -38,9 +41,10 @@ func TestStoreDelete(t *testing.T) {
 	defer teardown(t, s)
 	key := "momspecials"
 	data := []byte("some jpg bytes")
-	err := s.Write(key, bytes.NewReader(data))
+	n, err := s.Write(key, bytes.NewReader(data))
 	assert.Nil(t, err)
 	assert.Nil(t, s.Delete(key))
+	assert.True(t, n > 0)
 }
 
 func TestHasKey(t *testing.T) {
@@ -48,9 +52,10 @@ func TestHasKey(t *testing.T) {
 	defer teardown(t, s)
 	key := "momspecials"
 	data := []byte("some jpg bytes")
-	err := s.Write(key, bytes.NewReader(data))
+	n, err := s.Write(key, bytes.NewReader(data))
 	assert.Nil(t, err)
 	assert.True(t, s.Has(key))
+	assert.True(t, n > 0)
 }
 
 func newStore() *Store {
